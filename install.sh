@@ -10,3 +10,9 @@ kubectl apply -f configmap.yaml
 
 # Install secrets
 kubectl apply -f secrets.yaml
+
+# Install ingress
+kubectl apply -f ingress.yaml
+
+# Install basic-auth secrets
+kubectl create secret generic basic-auth --from-file=auth
