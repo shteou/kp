@@ -30,7 +30,7 @@ data:
         #   AWS: s3.amazonaws.com
         #   GCS: storage.googleapis.com
         #   Minio: my-minio-endpoint.default:9000
-        endpoint: kp-artifacts.s3.fr-par.scw.cloud
+        endpoint: <your endpoint>
         bucket: kp-artifacts
         region: fr-par
 

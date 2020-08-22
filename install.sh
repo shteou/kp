@@ -7,3 +7,6 @@ kubectl create rolebinding default-admin --clusterrole=admin --serviceaccount=ar
 
 # Apply a custom workflow-controller config
 kubectl apply -f configmap.yaml
+
+# Install secrets
+kubectl apply -f secrets.yaml
