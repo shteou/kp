@@ -5,4 +5,5 @@ kubectl apply -n argo -f https://raw.githubusercontent.com/argoproj/argo/stable/
 # Install a rolebinding with admin privs
 kubectl create rolebinding default-admin --clusterrole=admin --serviceaccount=argo:default -n argo
 
-
+# Apply a custom workflow-controller config
+kubectl apply -f configmap.yaml

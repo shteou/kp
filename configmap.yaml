@@ -1,0 +1,100 @@
+# This file describes the config settings available in the workflow controller configmap
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: workflow-controller-configmap
+data:
+  config: |   # This is optional in v2.7+, see docs/workflow-controller-configmap.md
+    #instanceID: kp-controller
+
+    # Parallelism limits the max total parallel workflows that can execute at the same time
+    # (available since Argo v2.3)
+    parallelism: 20
+
+    # Whether or not to emit events on node completion. These can take a up a lot of space in
+    # k8s (typically etcd) resulting in errors when trying to create new events:
+    # "Unable to create audit event: etcdserver: mvcc: database space exceeded"
+    # This config item allows you to disable this.
+    # (since v2.9)
+    nodeEvents:
+      enabled: false
+
+    # artifactRepository defines the default location to be used as the artifact repository for
+    # container artifacts.
+    artifactRepository:
+      # archiveLogs will archive the main container logs as an artifact
+      archiveLogs: true
+
+      s3:
+        # Use the corresponding endpoint depending on your S3 provider:
+        #   AWS: s3.amazonaws.com
+        #   GCS: storage.googleapis.com
+        #   Minio: my-minio-endpoint.default:9000
+        endpoint: kp-artifacts.s3.fr-par.scw.cloud
+        bucket: kp-artifacts
+        region: fr-par
+
+        # insecure will disable TLS. Primarily used for minio installs not configured with TLS
+        insecure: false
+
+        # keyFormat is a format pattern to define how artifacts will be organized in a bucket.
+        # It can reference workflow metadata variables such as workflow.namespace, workflow.name,
+        # pod.name. Can also use strftime formating of workflow.creationTimestamp so that workflow
+        # artifacts can be organized by date. If omitted, will use `{{workflow.name}}/{{pod.name}}`,
+        # which has potential for have collisions.
+        # The following example pattern organizes workflow artifacts under a "my-artifacts" sub dir,
+        # then sub dirs for year, month, date and finally workflow name and pod.
+        # e.g.: my-artifacts/2018/08/23/my-workflow-abc123/my-workflow-abc123-1234567890
+        keyFormat: "{{workflow.creationTimestamp.Y}}\
+          /{{workflow.creationTimestamp.m}}\
+          /{{workflow.creationTimestamp.d}}\
+          /{{workflow.name}}\
+          /{{pod.name}}"
+        # The actual secret object (in this example my-s3-credentials), should be created in every
+        # namespace where a workflow needs to store its artifacts to S3. If omitted,
+        # attempts to use IAM role to access the bucket (instead of accessKey/secretKey).
+        accessKeySecret:
+          name: my-s3-credentials
+          key: accessKey
+        secretKeySecret:
+          name: my-s3-credentials
+          key: secretKey
+        # If this is set to true, argo workflows will use AWS SDK default credentials provider chain. This will allow things like
+        # IRSA and any of the authentication methods that the golang SDK uses in it's default chain.
+        useSDKCreds: false
+
+    # executor controls how the init and wait container should be customized
+    # (available since Argo v2.3)
+    executor:
+      imagePullPolicy: IfNotPresent
+      resources:
+        requests:
+          cpu: 0.1
+          memory: 64Mi
+        limits:
+          cpu: 0.5
+          memory: 512Mi
+      # args & env allows command line arguments and environment variables to be appended to the
+      # executor container and is mainly used for development/debugging purposes.
+      args:
+      - --loglevel
+      - debug
+      - --gloglevel
+      - "6"
+      env:
+      # ARGO_TRACE enables some tracing information for debugging purposes. Currently it enables
+      # logging of S3 request/response payloads (including auth headers)
+      - name: ARGO_TRACE
+        value: "1"
+
+
+
+    # workflowRequirements restricts the Workflows that the controller will process.
+    # Current options:
+    #   referenceOnly: Only Workflows using "workflowTemplateRef" will be processed. This allows the administrator of the controller
+    #     to set a "library" of templates that may be run by its opeartor, limiting arbitrary Workflow execution.
+    #   strictReferenceOnly: Only Workflows using "workflowTemplateRef" will be processed and the controller will enforce
+    #     that the WorkflowTemplate that is referenced hasn't changed between operations. If you want to make sure the operator of the
+    #     Workflow cannot run an arbitrary Workflow, use this option.
+    #workflowRequirements:
+    #  referenceOnly: true
