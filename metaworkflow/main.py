@@ -60,18 +60,49 @@ def github_webhook():
 
   payload = request.get_json()
 
-  org = payload["repository"]["owner"]["name"]
-  service_name = payload["repository"]["name"]
-  branch = payload["ref"].split("/")[-1]
-  commit_sha = payload["head_commit"]["id"]
-
-  if ("before" in payload or "after" in payload):
-    print("Received webhook, scaffolding metapipeline")
-    print(yaml.dump(scaffold_workflow(service_name, org, branch, commit_sha)))
+  if "pull_request" in payload and "state" in payload["pull_request"] and payload["pull_request"]["state"] == "open" and payload["pull_request"]["draft"] != True:
+    print("Webhook received (pull request, state=open)")
+    handle_pr_push(payload)
+  elif "before" in payload and "after" in payload and "ref" in payload and payload["ref"] == "refs/heads/master":
+    print("Webhook received (merge to master)")
+    handle_master_push(payload)
   else:
-    print("Received webhook for unrecognised event")
+    print("Unknown webhook type")
+    print(payload["before"])
+    print(payload["ref"])
 
   return "OK", 200
+
+def handle_pr_push(payload):
+  (branch, pr_number, commit_sha, org, repo) = extract_pr_info(payload)
+  print(yaml.dump(scaffold_workflow(repo, org, f"pr-{pr_number}", commit_sha)))
+
+def handle_master_push(payload):
+  (commit_sha, org, repo) = extract_master_info(payload)
+  print(yaml.dump(scaffold_workflow(repo, org, "master", commit_sha)))
+
+
+def extract_pr_info(payload):
+  pull_request = payload["pull_request"]
+  head = pull_request["head"]
+
+  branch = head["ref"]
+  pr_number = pull_request["number"]
+  before_commit = payload["before"]
+  org = head["repo"]["owner"]["login"]
+  repo = head["repo"]["name"]
+
+  return (branch, pr_number, before_commit, org, repo)
+
+def extract_master_info(payload):
+  repository = payload["repository"]
+
+  before_commit = payload["before"]
+  org = repository["owner"]["name"]
+  repo = repository["name"]
+
+  return (before_commit, org, repo)
+  
 
 def validate_github_webhook_secret(request):
   digest_maker = hmac.new("a-secret-key".encode("utf-8"), bytearray(request.data), hashlib.sha1)
