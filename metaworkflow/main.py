@@ -55,8 +55,8 @@ def health():
 
 @app.route('/webhooks/github', methods=["POST"])
 def github_webhook():
-  #if not validate_github_webhook_secret(request):
-  #  return "Invalid WebHook signature", 400
+  if not validate_github_webhook_secret(request):
+    return "Invalid WebHook signature", 400
 
   payload = request.get_json()
 
