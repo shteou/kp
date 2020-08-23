@@ -80,5 +80,5 @@ def validate_github_webhook_secret(request):
     return False
   return True
 
-http_server = WSGIServer(('', 8080), app)
+http_server = WSGIServer(('0.0.0.0', 8080), app)
 http_server.serve_forever()
