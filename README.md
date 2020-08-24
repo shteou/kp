@@ -29,4 +29,4 @@ Create an htpasswd file called auth.
 
 ## Installation
 
-Run `./install.sh` !
+Run `./install.sh` !!!
