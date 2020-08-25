@@ -105,7 +105,7 @@ def extract_master_info(payload):
   
 
 def validate_github_webhook_secret(request):
-  digest_maker = hmac.new("a-secret-key".encode("utf-8"), bytearray(request.data), hashlib.sha1)
+  digest_maker = hmac.new(os.environ["WEBHOOK_SECRET"].encode("utf-8"), bytearray(request.data), hashlib.sha1)
   if not hmac.compare_digest(digest_maker.hexdigest(), request.headers.get('X-Hub-Signature').replace("sha1=", "")):
     print("Invalid X-Hub-Signature in Github webhook call")
     return False
