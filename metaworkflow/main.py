@@ -88,7 +88,7 @@ def extract_pr_info(payload):
 
   branch = head["ref"]
   pr_number = pull_request["number"]
-  before_commit = payload["before"]
+  before_commit = head["sha"]
   org = head["repo"]["owner"]["login"]
   repo = head["repo"]["name"]
 
